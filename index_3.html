@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Painel de Briefing — EasyChef</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #17110C;
+    --surface: #221912;
+    --surface-2: #2A1F16;
+    --ink: #F7EFE6;
+    --ink-soft: #B7A48D;
+    --line: #3D2E20;
+    --primary: #FF6B00;
+    --primary-dark: #FF8A3D;
+    --primary-tint: #3A2010;
+    --warn: #E7B24B;
+    --error: #FF6B6B;
+
+    --ig: #FF6B00;
+    --ig-tint: rgba(255,107,0,.14);
+    --tiktok: #F2E8DC;
+    --tiktok-tint: rgba(242,232,220,.10);
+    --linkedin: #C7A67B;
+    --linkedin-tint: rgba(199,166,123,.12);
+
+    --radius-l: 22px;
+    --radius-m: 14px;
+    --radius-s: 8px;
+    --font-display: 'Baloo 2', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body); line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{font-family:var(--font-display); margin:0; color:var(--ink); font-weight:700;}
+  button{font-family:var(--font-body); cursor:pointer;}
+  textarea,input,select{font-family:var(--font-body);}
+  svg{display:block;}
+
+  .app{display:grid; grid-template-columns:320px 1fr; min-height:100vh;}
+  @media (max-width:900px){ .app{grid-template-columns:1fr;} }
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar{
+    background:var(--surface); border-right:1px solid var(--line);
+    padding:24px 20px 60px; display:flex; flex-direction:column; gap:20px;
+    position:relative; overflow:hidden;
+  }
+  .sidebar::before{
+    content:""; position:absolute; top:-90px; left:-90px; width:260px; height:260px;
+    background:radial-gradient(circle, rgba(255,107,0,.22), transparent 70%);
+    pointer-events:none;
+  }
+  .brand{display:flex; align-items:center; gap:10px; margin-bottom:2px; position:relative; z-index:1;}
+  .brand-logo-img{height:34px; width:auto; object-fit:contain; display:none;}
+  .brand-badge{
+    width:38px; height:30px; background:var(--primary); border-radius:16px 16px 16px 4px;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--font-display); font-weight:800; font-size:13px;
+    flex-shrink:0;
+  }
+  .brand-name{font-family:var(--font-display); font-size:19px; font-weight:800; color:var(--primary-dark);}
+  .brand-sub{font-size:11px; color:var(--ink-soft); font-weight:600; letter-spacing:.02em;}
+  .gear-btn{
+    margin-left:auto; background:none; border:none; color:var(--ink-soft); width:30px; height:30px;
+    display:flex; align-items:center; justify-content:center; border-radius:8px; flex-shrink:0;
+  }
+  .gear-btn:hover{color:var(--primary); background:var(--surface-2);}
+  .gear-btn svg{width:17px; height:17px;}
+  .settings-panel{
+    position:absolute; top:44px; right:0; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:var(--radius-m); padding:14px; width:250px; z-index:30;
+    box-shadow:0 12px 28px rgba(0,0,0,.5); display:none; flex-direction:column; gap:8px;
+  }
+
+  .mode-switch{display:flex; gap:6px; background:var(--surface-2); border-radius:999px; padding:4px; position:relative; z-index:1;}
+  .mode-btn{
+    flex:1; border:none; background:none; border-radius:999px; padding:8px 6px; font-size:12px; font-weight:700;
+    color:var(--ink-soft); display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .mode-btn svg{width:13px; height:13px;}
+  .mode-btn.active{background:var(--primary); color:#1A1006;}
+
+  .field-group{display:flex; flex-direction:column; gap:8px; position:relative; z-index:1;}
+  .field-label{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);}
+  .field-hint{font-size:11.5px; color:var(--ink-soft); margin-top:-4px;}
+  input[type=text], input[type=password], textarea, select{
+    width:100%; border:1px solid var(--line); border-radius:var(--radius-s);
+    padding:9px 11px; font-size:13.5px; background:var(--bg); color:var(--ink); resize:vertical;
+  }
+  input[type=text]:focus, input[type=password]:focus, textarea:focus, select:focus{outline:2px solid var(--primary); outline-offset:1px;}
+  input[type=text]::placeholder, textarea::placeholder{color:var(--ink-soft); opacity:.7;}
+  input[type=file]{font-size:11px; color:var(--ink-soft);}
+
+  .cat-label{font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--primary-dark); margin:8px 2px 2px;}
+  .lines-list{display:flex; flex-direction:column; gap:8px;}
+  .line-card{border:1px solid var(--line); border-radius:var(--radius-m); background:var(--bg); overflow:hidden;}
+  .line-head{display:flex; align-items:center; gap:6px; padding:9px 10px;}
+  .line-head input[type=checkbox]{width:16px; height:16px; accent-color:var(--primary); flex-shrink:0;}
+  .line-name{flex:1; border:none; background:transparent; font-weight:600; font-size:13.5px; padding:2px 0; width:auto; color:var(--ink);}
+  .line-name:focus{outline:none; text-decoration:underline;}
+  .line-launch, .line-remove{border:none; background:none; color:var(--ink-soft); font-size:13px; line-height:1; padding:2px 5px; flex-shrink:0; display:flex; align-items:center;}
+  .line-launch svg, .line-remove svg{width:13px; height:13px;}
+  .line-remove:hover{color:var(--error);}
+  .line-launch:hover{color:var(--primary-dark);}
+  .line-meta{display:flex; flex-direction:column; gap:4px; padding:0 10px 6px;}
+  .line-meta input{font-size:11px; padding:5px 8px; background:var(--surface-2);}
+  .line-angles{padding:0 10px 10px;}
+  .line-angles textarea{min-height:40px; font-size:12.5px; background:var(--surface-2);}
+  .add-line-btn{
+    border:1.5px dashed var(--line); background:none; border-radius:var(--radius-m);
+    padding:8px; font-size:12.5px; color:var(--ink-soft); font-weight:600; width:100%;
+  }
+  .add-line-btn:hover{border-color:var(--primary); color:var(--primary-dark);}
+
+  .chips{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{
+    background:var(--primary-tint); color:var(--primary-dark); border-radius:999px;
+    padding:4px 10px 4px 12px; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px;
+  }
+  .chip button{border:none; background:none; color:var(--primary-dark); font-size:13px; padding:0;}
+  .chip-input-row{display:flex; gap:6px;}
+  .chip-input-row input{flex:1;}
+  .chip-add{
+    border:1px solid var(--primary); background:var(--surface); color:var(--primary-dark); border-radius:var(--radius-s);
+    padding:0 12px; font-size:12.5px; font-weight:700;
+  }
+
+  .ref-thumbs{display:flex; flex-wrap:wrap; gap:6px;}
+  .ref-thumb{position:relative; width:52px; height:52px; border-radius:8px; overflow:hidden; border:1px solid var(--line);}
+  .ref-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .ref-thumb button{
+    position:absolute; top:1px; right:1px; background:rgba(0,0,0,.65); color:#fff; border:none;
+    border-radius:50%; width:16px; height:16px; font-size:9px; line-height:1;
+  }
+
+  .channels-row{display:flex; flex-direction:column; gap:8px;}
+  .channel-toggle{
+    display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line);
+    border-radius:var(--radius-m); background:var(--bg); font-size:13.5px; font-weight:600;
+  }
+  .channel-toggle input{width:16px; height:16px; accent-color:var(--primary);}
+  .channel-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+
+  .sidebar-actions{display:flex; flex-direction:column; gap:10px; margin-top:4px; position:relative; z-index:1;}
+  .btn-primary{
+    background:var(--primary); color:#1A1006; border:none; border-radius:999px;
+    padding:12px 16px; font-weight:800; font-size:14px;
+  }
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-primary:disabled{background:#4A3A28; color:var(--ink-soft); cursor:not-allowed;}
+  .btn-secondary{
+    background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:999px;
+    padding:10px 16px; font-weight:600; font-size:13px; display:flex; align-items:center; justify-content:center; gap:7px;
+  }
+  .btn-secondary svg{width:14px; height:14px;}
+  .btn-secondary:hover{border-color:var(--primary); color:var(--primary-dark);}
+
+  .saved-periods, .launches-list{display:flex; flex-direction:column; gap:6px;}
+  .saved-period-btn{
+    text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:var(--radius-s);
+    padding:7px 10px; font-size:12.5px; font-weight:600; color:var(--ink); width:100%;
+  }
+  .saved-period-btn:hover{border-color:var(--primary);}
+  .launch-select-btn.active-launch{border-color:var(--primary); color:var(--primary-dark); background:var(--primary-tint);}
+
+  /* ---------- MAIN ---------- */
+  .main{padding:28px 32px 80px; max-width:1100px;}
+  .main-header{margin-bottom:22px;}
+  .eyebrow{font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--primary-dark);}
+  .main-title{font-size:26px; margin-top:4px;}
+  .main-desc{color:var(--ink-soft); font-size:14px; margin-top:6px; max-width:640px;}
+
+  .analysis-card{
+    background:linear-gradient(135deg, var(--primary-tint), var(--surface)); border:1px solid var(--line);
+    border-radius:var(--radius-l); padding:18px 20px; margin-bottom:24px;
+  }
+  .analysis-card h3{font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:8px;}
+  .analysis-card h3 svg{width:16px; height:16px; color:var(--primary-dark);}
+  .analysis-list{margin:0; padding-left:18px; font-size:13.5px; color:var(--ink);}
+  .analysis-list li{margin-bottom:4px;}
+
+  .lens-tabs{display:flex; gap:8px; margin-bottom:0; border-bottom:2px solid var(--line);}
+  .lens-tab{
+    padding:10px 18px 12px; border:none; background:none; font-family:var(--font-display);
+    font-weight:700; font-size:14.5px; color:var(--ink-soft); border-bottom:3px solid transparent;
+    margin-bottom:-2px; display:flex; align-items:center; gap:8px;
+  }
+  .lens-tab .lens-dot{width:9px; height:9px; border-radius:50%;}
+  .lens-tab.active{color:var(--ink);}
+  .lens-count{ font-size:11px; background:var(--surface-2); color:var(--ink-soft); border-radius:999px; padding:1px 7px; font-weight:700; }
+
+  .lens-pane{ border-radius:0 0 var(--radius-l) var(--radius-l); padding:20px 4px 4px; }
+  .lens-rule{
+    font-size:13px; padding:12px 16px; border-radius:var(--radius-m); margin-bottom:18px; border:1px solid var(--line);
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .lens-rule b{font-family:var(--font-display);}
+
+  .line-section{margin-bottom:26px;}
+  .line-section-head{
+    display:flex; align-items:baseline; gap:10px; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--line);
+  }
+  .line-section-head h4{font-size:16px;}
+  .line-section-head .count-tag{font-size:11.5px; color:var(--ink-soft); font-weight:600;}
+  .export-btn{
+    margin-left:auto; border:1px solid var(--line); background:var(--surface); border-radius:999px;
+    font-size:11.5px; padding:4px 12px; font-weight:600; color:var(--ink-soft);
+  }
+  .export-btn:hover{border-color:var(--primary); color:var(--primary-dark);}
+
+  .idea-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:12px;}
+  .idea-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-m);
+    padding:14px 15px; display:flex; flex-direction:column; gap:8px;
+  }
+  .idea-top{display:flex; justify-content:space-between; gap:8px; align-items:flex-start;}
+  .idea-title{font-size:14.5px; font-weight:700; font-family:var(--font-display); line-height:1.25;}
+  .idea-format{
+    font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em;
+    background:var(--primary-tint); color:var(--primary-dark); border-radius:6px; padding:3px 7px; white-space:nowrap;
+    display:flex; align-items:center; gap:4px; flex-shrink:0;
+  }
+  .idea-format svg{width:11px; height:11px;}
+  .idea-audience{font-size:11px; color:var(--ink-soft); font-weight:600;}
+  .idea-desc{font-size:13px; color:var(--ink);}
+  .idea-cta{font-size:12.5px; color:var(--ink-soft); font-style:italic;}
+  .idea-toggle{
+    font-size:11.5px; color:var(--primary-dark); font-weight:700; background:none; border:none; padding:2px 0; text-align:left;
+  }
+  .idea-detail{display:none; flex-direction:column; gap:8px; padding-top:6px; border-top:1px dashed var(--line);}
+  .idea-detail.open{display:flex;}
+  .idea-why{font-size:12.5px; color:var(--ink);}
+  .idea-why b{color:var(--ink-soft); font-weight:700;}
+  .benchmark-tag{
+    display:flex; gap:6px; align-items:flex-start; background:var(--surface-2); border-radius:var(--radius-s);
+    padding:7px 9px; font-size:12px;
+  }
+  .benchmark-tag svg{width:12px; height:12px; margin-top:2px; color:var(--primary-dark); flex-shrink:0;}
+  .benchmark-tag .bmk-brand{font-weight:700; color:var(--primary-dark); white-space:nowrap;}
+  .idea-note-row{display:flex; gap:6px; align-items:center;}
+  select.idea-status{
+    font-size:11.5px; border:1px solid var(--line); border-radius:6px; padding:3px 6px; background:var(--surface-2); color:var(--ink); width:auto;
+  }
+  .idea-note{width:100%; min-height:34px; font-size:12px; background:var(--surface-2);}
+  .quota-warning{font-size:11.5px; color:var(--warn); margin:2px 0 6px; font-weight:600;}
+
+  .skeleton{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-m); padding:14px 15px;
+    min-height:120px; position:relative; overflow:hidden;
+  }
+  .skeleton::after{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(90deg, transparent, rgba(255,107,0,.14), transparent);
+    animation:shimmer 1.3s infinite;
+  }
+  @keyframes shimmer{ from{transform:translateX(-100%);} to{transform:translateX(100%);} }
+
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
+  .empty-state .big-lens{display:flex; align-items:center; justify-content:center; margin-bottom:14px;}
+  .empty-state .big-lens svg{width:44px; height:44px; color:var(--primary-dark);}
+  .empty-state h3{color:var(--ink); font-size:18px; margin-bottom:6px;}
+  .empty-state p{font-size:13.5px; max-width:420px; margin:0 auto;}
+
+  .progress-bar-wrap{ height:6px; background:var(--surface-2); border-radius:999px; overflow:hidden; margin:14px 0 10px; }
+  .progress-bar{height:100%; background:var(--primary); width:0%; transition:width .3s;}
+  .progress-label{font-size:12px; color:var(--ink-soft); margin-bottom:12px;}
+
+  .toast{
+    position:fixed; bottom:20px; right:20px; background:#0D0904; color:var(--ink); padding:10px 16px;
+    border:1px solid var(--primary); border-radius:var(--radius-s); font-size:13px; opacity:0; transform:translateY(10px);
+    transition:all .25s; z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <img class="brand-logo-img" id="brandLogoImg" src="assets/logo-easychef.png" alt="EasyChef" onerror="document.getElementById('brandFallback').style.display='flex'; this.style.display='none';">
+      <div class="brand-badge" id="brandFallback" style="display:none;">EC</div>
+      <div>
+        <div class="brand-name">EasyChef</div>
+        <div class="brand-sub">Painel de Briefing · Redes Sociais</div>
+      </div>
+      <button class="gear-btn" id="settingsBtn" title="Configurações"></button>
+      <div class="settings-panel" id="settingsPanel">
+        <label class="field-label">Chave de API da Anthropic</label>
+        <span class="field-hint">Só é necessária rodando fora do Claude.ai (ex: publicado no GitHub Pages). Fica salva apenas neste navegador, nunca no código.</span>
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+        <button class="btn-secondary" id="saveApiKeyBtn">Salvar chave</button>
+      </div>
+    </div>
+
+    <div class="mode-switch">
+      <button class="mode-btn active" data-mode="briefing">Briefing Mensal</button>
+      <button class="mode-btn" data-mode="launch">Lançamentos</button>
+    </div>
+
+    <!-- ===== BRIEFING MENSAL SIDEBAR ===== -->
+    <div id="briefingSidebarPanel" style="display:flex; flex-direction:column; gap:20px;">
+
+      <div class="field-group">
+        <label class="field-label">Período</label>
+        <input type="text" id="periodoInput" placeholder="ex: Agosto 2026">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Linhas de produto</label>
+        <span class="field-hint">Marque as linhas ativas neste período. Cortes/itens e embalagens já vêm preenchidos — ajuste se precisar, e anote o ângulo do mês.</span>
+        <div class="lines-list" id="linesList"></div>
+        <button class="add-line-btn" id="addLineBtn">+ adicionar linha</button>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Canais</label>
+        <div class="channels-row" id="channelsRow"></div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Marcas de referência (benchmarking)</label>
+        <span class="field-hint">A IA pesquisa o conteúdo dessas marcas (ou de comunicação parecida) para embasar as ideias.</span>
+        <div class="chips" id="brandChips"></div>
+        <div class="chip-input-row">
+          <input type="text" id="brandInput" placeholder="ex: Seara">
+          <button class="chip-add" id="brandAddBtn">add</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Referências de conteúdo</label>
+        <span class="field-hint">Cole legendas/roteiros que representam bem o tom da marca, e/ou envie imagens de textura, mockups ou prints. Vale para os dois modos.</span>
+        <textarea id="refTextInput" placeholder="Cole aqui exemplos de conteúdo completo já validado pela marca..." style="min-height:64px;"></textarea>
+        <input type="file" id="refImageInput" accept="image/png,image/jpeg,image/webp" multiple>
+        <div class="ref-thumbs" id="refThumbs"></div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Histórico / performance recente</label>
+        <span class="field-hint">Cole um resumo dos últimos posts e resultados — opcional, mas ajuda a IA a repetir o que funcionou.</span>
+        <textarea id="historicoInput" placeholder="ex: Reel da Linha Air Fryer teve o dobro de alcance médio..." style="min-height:70px;"></textarea>
+      </div>
+
+      <div class="sidebar-actions">
+        <button class="btn-secondary" id="analyzeBtn">Analisar histórico do mês</button>
+        <button class="btn-primary" id="generateBtn">Gerar briefing do período</button>
+      </div>
+
+      <div class="field-group" id="savedWrap" style="display:none;">
+        <label class="field-label">Períodos salvos</label>
+        <div class="saved-periods" id="savedPeriods"></div>
+      </div>
+    </div>
+
+    <!-- ===== LANÇAMENTOS SIDEBAR ===== -->
+    <div id="launchSidebarPanel" style="display:none; flex-direction:column; gap:20px;">
+      <div class="field-group">
+        <label class="field-label">Lançamentos cadastrados</label>
+        <span class="field-hint">Conteúdo de lançamento pede mais preparo: acompanhamento recorrente por vários meses, com fases.</span>
+        <div class="launches-list" id="launchesList"></div>
+        <button class="add-line-btn" id="addLaunchBtn">+ novo lançamento</button>
+      </div>
+
+      <div class="field-group" id="launchFormWrap" style="display:none;">
+        <label class="field-label">Novo lançamento</label>
+        <input type="text" id="launchNome" placeholder="Nome do lançamento (ex: MasterChef)">
+        <select id="launchLinha"></select>
+        <input type="text" id="launchMesInicio" placeholder="Mês de início (ex: Agosto 2026)">
+        <input type="text" id="launchDuracao" placeholder="Duração em meses (ex: 4)">
+        <textarea id="launchAngulos" placeholder="Mensagem central: o que precisa ser comunicado neste lançamento..." style="min-height:70px;"></textarea>
+        <label class="field-label" style="margin-top:2px;">Canais deste lançamento</label>
+        <div class="channels-row" id="launchChannelsRow"></div>
+        <button class="btn-primary" id="saveLaunchBtn" style="margin-top:4px;">Salvar lançamento</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <div class="main-header">
+      <div class="eyebrow" id="mainEyebrow">Painel de briefing trimestral</div>
+      <h1 class="main-title" id="mainTitle">Conteúdo por linha, por canal, com o porquê.</h1>
+      <p class="main-desc" id="mainDesc">Configure as linhas do período ao lado. Cada canal lê o mesmo produto com uma lente diferente — o painel gera 5 ideias por linha em cada canal (2 estáticas + 3 em vídeo), já com o racional e o benchmarking que embasam a sugestão.</p>
+    </div>
+
+    <div id="briefingMainPanel">
+      <div id="analysisArea"></div>
+      <div id="progressArea"></div>
+      <div class="lens-tabs" id="lensTabs"></div>
+      <div class="lens-pane" id="lensPane"></div>
+    </div>
+
+    <div id="launchMainPanel" style="display:none;"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   ICONS (inline SVG, currentColor — replaces emoji)
+========================================================= */
+const ICONS = {
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="10" r="6"/><line x1="15" y1="15" x2="20" y2="20"/></svg>',
+  rocket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 1 5 4 5 8 0 3-1 5-2 6l-1 1-2-1-2 1-1-1c-1-1-2-3-2-6 0-4 2-7 5-8z"/><circle cx="12" cy="9" r="1.5"/><path d="M8.5 15c-2 1-2 4-2 4s3 0 4-2"/><path d="M15.5 15c2 1 2 4 2 4s-3 0-4-2"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="15"/></svg>',
+  image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.4"/><path d="M21 15.5l-5-5-4 4-3-3-6 5.5"/></svg>',
+  video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.9 7.9 0 000-2l2-1.5-2-3.4-2.4.6a7.9 7.9 0 00-1.7-1L14.8 3H9.2l-.5 2.7a7.9 7.9 0 00-1.7 1l-2.4-.6-2 3.4L4.6 11a7.9 7.9 0 000 2l-2 1.5 2 3.4 2.4-.6a7.9 7.9 0 001.7 1l.5 2.7h5.6l.5-2.7a7.9 7.9 0 001.7-1l2.4.6 2-3.4z"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>'
+};
+
+/* =========================================================
+   STORAGE ADAPTER — Claude.ai artifact storage, falls back
+   to localStorage when running standalone (e.g. GitHub Pages)
+========================================================= */
+const hasArtifactStorage = (typeof window.storage !== 'undefined') && window.storage && typeof window.storage.get === 'function';
+async function storageGet(key, shared){
+  if(hasArtifactStorage){ try{ return await window.storage.get(key, shared); }catch(e){ return null; } }
+  try{ const v = localStorage.getItem(key); return v!==null ? {key, value:v, shared:!!shared} : null; }catch(e){ return null; }
+}
+async function storageSet(key, value, shared){
+  if(hasArtifactStorage){ try{ return await window.storage.set(key, value, shared); }catch(e){ return null; } }
+  try{ localStorage.setItem(key, value); return {key, value, shared:!!shared}; }catch(e){ return null; }
+}
+
+/* =========================================================
+   API KEY (optional, only needed outside Claude.ai)
+========================================================= */
+let apiKeyOverride = '';
+try{ apiKeyOverride = localStorage.getItem('briefing:apikey') || ''; }catch(e){}
+
+/* =========================================================
+   CONFIG / CONSTANTS
+========================================================= */
+const CHANNELS = {
+  instagram: {
+    nome: "Instagram", dot: "var(--ig)", tint: "var(--ig-tint)",
+    regra: "Público duplo: consumidor final <b>e</b> comprador B2B (varejo, distribuidor, food service, transformador). Conteúdo dinâmico que converse com os dois sem ser massivo — ensina como usar o produto e seus benefícios, com autoridade e leveza.",
+    systemRule: "Canal: Instagram. Este canal fala com DOIS públicos ao mesmo tempo — o consumidor final (dona/dono de casa) e o comprador B2B (varejo, distribuidor, food service, transformador). O conteúdo deve ser dinâmico e educativo (como usar o produto, benefícios), sem ser massivo ou raso. Precisa transmitir autoridade sobre o produto mas com leveza de rede social — nunca só institucional, nunca só vendedor."
+  },
+  tiktok: {
+    nome: "TikTok", dot: "var(--tiktok)", tint: "var(--tiktok-tint)",
+    regra: "Conteúdo interativo e dinâmico que aproxima o público da marca, sem perder a seriedade. Prioriza imagens reais do produto, receitas e bastidores.",
+    systemRule: "Canal: TikTok. Conteúdo interativo, dinâmico e de aproximação com a marca, mas sem perder a seriedade (não é humor raso). Priorizar formatos com imagens reais do produto (nada de renders genéricos), receitas práticas e bastidores/making of. O tom é próximo, mas o produto continua sendo tratado com o padrão de qualidade da marca."
+  },
+  linkedin: {
+    nome: "LinkedIn", dot: "var(--linkedin)", tint: "var(--linkedin-tint)",
+    regra: "Comunicação institucional: força da marca, conquistas, presença em eventos do setor, busca por inovação e o básico sobre as linhas. Objetivo é relevância e autoridade.",
+    systemRule: "Canal: LinkedIn. Comunicação institucional, voltada a parceiros de negócio (distribuidores, varejo, food service, imprensa do setor). Foco em força da marca, conquistas e números, presença em feiras/eventos relevantes do setor de alimentos, inovação e informações básicas sobre as linhas de produto (não é conteúdo de receita ou humor). Objetivo: dar relevância e autoridade à marca no mercado B2B."
+  }
+};
+
+const BRAND_CONTEXT = `Marca: EasyChef — alimentos congelados (batatas pré-fritas, vegetais, frutas, pescados, petiscos), presença consolidada há mais de uma década no mercado brasileiro, nos 27 estados + DF, atuando em atacado, varejo, cash & carry, auto serviço, food service e distribuidoras. Linhas oficiais (site e trade): Tradicional, Air Fryer, Varejo, Professional, Petiscos, Frutas, Vegetais, Pescados e MasterChef (linha em lançamento).
+Lema: "Sua vida cada vez mais Easy". "Easy" é o centro do posicionamento: conveniência, agilidade, confiabilidade e facilidade no preparo.
+Tom de voz: leve e otimista (transmite facilidade, felicidade e bem-estar); moderno (conversa com família, jovens, operadores de food service e varejo); confiável (consumidor em primeiro lugar, transparência).
+Paleta visual: laranja #FF6B00 como cor principal, tons de marrom para textos institucionais.`;
+
+const DEFAULT_LINES = [
+  {id:"bat-trad", categoria:"Batatas", nome:"Batata Tradicional", cortes:"Palito e corte fino", embalagens:"1,5kg e 2,0kg", angulos:"", ativa:true},
+  {id:"bat-varejo", categoria:"Batatas", nome:"Batata Varejo", cortes:"Crinkle wedges, emoticons, palito tradicional e air fryer antiga (corte crinkle)", embalagens:"400g a 1,05kg", angulos:"", ativa:false},
+  {id:"bat-af", categoria:"Batatas", nome:"Batata Air Fryer", cortes:"Corte fino coated, crinkle coated e rústica", embalagens:"400g e 1,01kg", angulos:"", ativa:true},
+  {id:"bat-prof", categoria:"Batatas", nome:"Batata Professional", cortes:"Corte fino, coated, palito tradicional, crinkle e corte fino extra coated", embalagens:"2,0kg", angulos:"", ativa:false},
+  {id:"petiscos", categoria:"Petiscos", nome:"Petiscos", cortes:"Polenta e onion rings", embalagens:"1,1kg", angulos:"", ativa:false},
+  {id:"frutas", categoria:"Frutas", nome:"Frutas Congeladas", cortes:"Morango, frutas vermelhas, amora, mirtilo, framboesa", embalagens:"300g e 1,01kg", angulos:"", ativa:false},
+  {id:"vegetais", categoria:"Vegetais", nome:"Vegetais Congelados", cortes:"Ervilha, milho, mix de vegetais, jardineira, cebola picada, alho inteiro descascado, alho picado, couve-flor, brócolis", embalagens:"300g e 1,1kg", angulos:"", ativa:false},
+  {id:"pescados", categoria:"Pescados", nome:"Pescados", cortes:"Filé de panga e filé de polaca (IQF)", embalagens:"600g e 1,0kg (filé de panga também em caixa 10kg interfolhado)", angulos:"", ativa:false},
+  {id:"masterchef", categoria:"MasterChef", nome:"MasterChef", cortes:"Mix de vegetais, alho picado, cebola picada e morango", embalagens:"300g e 1,01kg", angulos:"Lançamento da linha — precisa de conteúdo recorrente nos próximos meses.", ativa:true},
+];
+
+const DEFAULT_BRANDS = ["Seara","McCain","Bem Brasil","Sadia","Copacol","Masterboi","Demarchi"];
+const PHASE_LABELS = ["Teaser / Aquecimento","Lançamento","Educação & Uso","Reforço & Prova social"];
+function phaseForMonth(idx){ return PHASE_LABELS[idx] || "Recorrência"; }
+
+/* =========================================================
+   STATE
+========================================================= */
+let state = {
+  periodo: "",
+  linhas: JSON.parse(JSON.stringify(DEFAULT_LINES)),
+  canais: {instagram:true, tiktok:true, linkedin:true},
+  marcas: [...DEFAULT_BRANDS],
+  historico: "",
+  referencias: {textos:"", imagens:[]},
+  resultados: {},
+  activeTab: "instagram",
+  launches: [],
+  mode: "briefing",
+  activeLaunchId: null,
+  pendingLaunchLinha: null
+};
+
+/* =========================================================
+   STORAGE — persistence helpers
+========================================================= */
+async function saveConfig(){
+  await storageSet('briefing:config', JSON.stringify({ linhas: state.linhas, canais: state.canais, marcas: state.marcas }), false);
+}
+async function loadConfig(){
+  const r = await storageGet('briefing:config', false);
+  if(r && r.value){
+    try{
+      const parsed = JSON.parse(r.value);
+      if(parsed.linhas) state.linhas = parsed.linhas;
+      if(parsed.canais) state.canais = parsed.canais;
+      if(parsed.marcas) state.marcas = parsed.marcas;
+    }catch(e){}
+  }
+}
+async function savePeriodResult(){
+  if(!state.periodo) return;
+  await storageSet('briefing:periodo:'+state.periodo, JSON.stringify(state.resultados), false);
+  let list = [];
+  const r = await storageGet('briefing:periodos', false);
+  if(r && r.value){ try{ list = JSON.parse(r.value); }catch(e){} }
+  if(!list.includes(state.periodo)) list.unshift(state.periodo);
+  list = list.slice(0,12);
+  await storageSet('briefing:periodos', JSON.stringify(list), false);
+  renderSavedPeriods(list);
+}
+async function loadSavedPeriodsList(){
+  const r = await storageGet('briefing:periodos', false);
+  if(r && r.value){ try{ renderSavedPeriods(JSON.parse(r.value)); }catch(e){} }
+}
+async function loadPeriod(nome){
+  const r = await storageGet('briefing:periodo:'+nome, false);
+  if(r && r.value){
+    try{
+      state.resultados = JSON.parse(r.value);
+      state.periodo = nome;
+      document.getElementById('periodoInput').value = nome;
+      renderLensTabs(); renderLensPane();
+      showToast('Período "'+nome+'" carregado.');
+    }catch(e){ showToast('Não foi possível carregar esse período.'); }
+  }
+}
+function renderSavedPeriods(list){
+  const wrap = document.getElementById('savedWrap');
+  const el = document.getElementById('savedPeriods');
+  if(!list || !list.length){ wrap.style.display='none'; return; }
+  wrap.style.display='flex';
+  el.innerHTML = list.map(p => `<button class="saved-period-btn" data-p="${escapeAttr(p)}">${escapeHtml(p)}</button>`).join('');
+  el.querySelectorAll('.saved-period-btn').forEach(b=> b.addEventListener('click', ()=> loadPeriod(b.dataset.p)));
+}
+async function saveLaunches(){ await storageSet('briefing:launches', JSON.stringify(state.launches), false); }
+async function loadLaunches(){
+  const r = await storageGet('briefing:launches', false);
+  if(r && r.value){ try{ state.launches = JSON.parse(r.value); }catch(e){} }
+}
+async function saveReferencias(){
+  const res = await storageSet('briefing:referencias', JSON.stringify(state.referencias), false);
+  if(!res) showToast('Referências muito grandes para salvar — tente imagens menores.');
+}
+async function loadReferencias(){
+  const r = await storageGet('briefing:referencias', false);
+  if(r && r.value){ try{ state.referencias = JSON.parse(r.value); }catch(e){} }
+}
+
+/* =========================================================
+   UTIL
+========================================================= */
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function linhaContext(linha){
+  return `${linha.nome} (categoria: ${linha.categoria}) — cortes/itens: ${linha.cortes||'-'}; embalagens: ${linha.embalagens||'-'}.`;
+}
+function quotaWarning(ideas){
+  if(!Array.isArray(ideas)) return null;
+  const estat = ideas.filter(i => (i.tipo||'').toLowerCase().startsWith('est')).length;
+  const vid = ideas.length - estat;
+  if(estat!==2 || vid!==3) return `${ICONS.gear} gerou ${estat} estático(s) e ${vid} vídeo(s) — o esperado é 2 e 3.`;
+  return null;
+}
+
+/* =========================================================
+   MODE SWITCH
+========================================================= */
+function switchMode(mode){
+  state.mode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b=> b.classList.toggle('active', b.dataset.mode===mode));
+  document.getElementById('briefingSidebarPanel').style.display = mode==='briefing' ? 'flex' : 'none';
+  document.getElementById('launchSidebarPanel').style.display = mode==='launch' ? 'flex' : 'none';
+  document.getElementById('briefingMainPanel').style.display = mode==='briefing' ? '' : 'none';
+  document.getElementById('launchMainPanel').style.display = mode==='launch' ? '' : 'none';
+  if(mode==='briefing'){
+    document.getElementById('mainTitle').textContent = "Conteúdo por linha, por canal, com o porquê.";
+    document.getElementById('mainDesc').textContent = 'Configure as linhas do período ao lado. Cada canal lê o mesmo produto com uma lente diferente — o painel gera 5 ideias por linha em cada canal (2 estáticas + 3 em vídeo), já com o racional e o benchmarking que embasam a sugestão.';
+  } else {
+    document.getElementById('mainTitle').textContent = "Lançamentos: plano recorrente, mês a mês.";
+    document.getElementById('mainDesc').textContent = 'Lançamentos pedem mais preparo e continuidade. Defina a duração e o painel monta um plano por fase (teaser, lançamento, educação, reforço) para cada canal ativo.';
+    renderLaunchesList();
+    renderLaunchMain();
+  }
+}
+
+/* =========================================================
+   SIDEBAR — BRIEFING MENSAL
+========================================================= */
+function lineCardHtml(l){
+  return `
+    <div class="line-card" data-id="${l.id}">
+      <div class="line-head">
+        <input type="checkbox" class="line-active" ${l.ativa?'checked':''}>
+        <input type="text" class="line-name" value="${escapeAttr(l.nome)}">
+        <button class="line-launch" title="criar lançamento com esta linha">${ICONS.rocket}</button>
+        <button class="line-remove" title="remover linha">${ICONS.close}</button>
+      </div>
+      <div class="line-meta">
+        <input type="text" class="line-cortes" value="${escapeAttr(l.cortes||'')}" placeholder="cortes/itens">
+        <input type="text" class="line-emb" value="${escapeAttr(l.embalagens||'')}" placeholder="embalagens">
+      </div>
+      <div class="line-angles">
+        <textarea class="line-angles-input" placeholder="Ângulos/infos a explorar neste período (ex: nova gramatura, foco em crocância, lançamento)...">${escapeHtml(l.angulos)}</textarea>
+      </div>
+    </div>`;
+}
+function renderLines(){
+  const el = document.getElementById('linesList');
+  const categorias = [];
+  state.linhas.forEach(l=>{ if(!categorias.includes(l.categoria)) categorias.push(l.categoria); });
+  el.innerHTML = categorias.map(cat=>{
+    const linhas = state.linhas.filter(l=>l.categoria===cat);
+    return `<div class="cat-label">${escapeHtml(cat)}</div>${linhas.map(lineCardHtml).join('')}`;
+  }).join('');
+
+  el.querySelectorAll('.line-card').forEach(card=>{
+    const id = card.dataset.id;
+    const linha = state.linhas.find(x=>x.id===id);
+    card.querySelector('.line-active').addEventListener('change', e=>{ linha.ativa = e.target.checked; saveConfig(); });
+    card.querySelector('.line-name').addEventListener('input', e=>{ linha.nome = e.target.value; });
+    card.querySelector('.line-name').addEventListener('blur', saveConfig);
+    card.querySelector('.line-cortes').addEventListener('input', e=>{ linha.cortes = e.target.value; });
+    card.querySelector('.line-cortes').addEventListener('blur', saveConfig);
+    card.querySelector('.line-emb').addEventListener('input', e=>{ linha.embalagens = e.target.value; });
+    card.querySelector('.line-emb').addEventListener('blur', saveConfig);
+    card.querySelector('.line-angles-input').addEventListener('input', e=>{ linha.angulos = e.target.value; });
+    card.querySelector('.line-angles-input').addEventListener('blur', saveConfig);
+    card.querySelector('.line-remove').addEventListener('click', ()=>{
+      state.linhas = state.linhas.filter(x=>x.id!==id);
+      renderLines(); saveConfig();
+    });
+    card.querySelector('.line-launch').addEventListener('click', ()=>{
+      state.pendingLaunchLinha = id;
+      switchMode('launch');
+      document.getElementById('launchFormWrap').style.display='flex';
+      renderLaunchChannels();
+      populateLaunchLinhaSelect();
+    });
+  });
+}
+function renderChannels(){
+  const el = document.getElementById('channelsRow');
+  el.innerHTML = Object.keys(CHANNELS).map(k=>{
+    const c = CHANNELS[k];
+    return `<label class="channel-toggle"><input type="checkbox" class="channel-check" data-c="${k}" ${state.canais[k]?'checked':''}><span class="channel-dot" style="background:${c.dot}"></span>${c.nome}</label>`;
+  }).join('');
+  el.querySelectorAll('.channel-check').forEach(cb=>{
+    cb.addEventListener('change', e=>{ state.canais[e.target.dataset.c] = e.target.checked; saveConfig(); });
+  });
+}
+function renderBrandChips(){
+  const el = document.getElementById('brandChips');
+  el.innerHTML = state.marcas.map((m,i)=>`<span class="chip">${escapeHtml(m)} <button data-i="${i}">${ICONS.close}</button></span>`).join('');
+  el.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{ state.marcas.splice(parseInt(b.dataset.i),1); renderBrandChips(); saveConfig(); });
+  });
+}
+function renderRefThumbs(){
+  const el = document.getElementById('refThumbs');
+  el.innerHTML = state.referencias.imagens.map(img=>`
+    <div class="ref-thumb"><img src="data:${img.mediaType};base64,${img.data}" alt="${escapeAttr(img.name)}"><button data-id="${img.id}">${ICONS.close}</button></div>
+  `).join('');
+  el.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.referencias.imagens = state.referencias.imagens.filter(i=>i.id!==b.dataset.id);
+      renderRefThumbs(); saveReferencias();
+    });
+  });
+}
+
+/* =========================================================
+   SIDEBAR — LANÇAMENTOS
+========================================================= */
+function renderLaunchesList(){
+  const el = document.getElementById('launchesList');
+  if(!state.launches.length){
+    el.innerHTML = '<p style="font-size:12px;color:var(--ink-soft);margin:0;">Nenhum lançamento cadastrado ainda.</p>';
+  } else {
+    el.innerHTML = state.launches.map(lz=>`
+      <button class="saved-period-btn launch-select-btn ${state.activeLaunchId===lz.id?'active-launch':''}" data-id="${lz.id}">
+        ${escapeHtml(lz.nome)} <span style="color:var(--ink-soft);font-weight:400;">(${lz.duracaoMeses}m)</span>
+      </button>`).join('');
+    el.querySelectorAll('.launch-select-btn').forEach(b=>{
+      b.addEventListener('click', ()=>{ state.activeLaunchId = b.dataset.id; renderLaunchesList(); renderLaunchMain(); });
+    });
+  }
+  populateLaunchLinhaSelect();
+}
+function populateLaunchLinhaSelect(){
+  const sel = document.getElementById('launchLinha');
+  if(!sel) return;
+  sel.innerHTML = state.linhas.map(l=>`<option value="${l.id}">${escapeHtml(l.categoria)} — ${escapeHtml(l.nome)}</option>`).join('');
+  if(state.pendingLaunchLinha) sel.value = state.pendingLaunchLinha;
+}
+function renderLaunchChannels(){
+  const el = document.getElementById('launchChannelsRow');
+  el.innerHTML = Object.keys(CHANNELS).map(k=>{
+    const c = CHANNELS[k];
+    return `<label class="channel-toggle"><input type="checkbox" class="launch-channel-check" data-c="${k}" checked><span class="channel-dot" style="background:${c.dot}"></span>${c.nome}</label>`;
+  }).join('');
+}
+function saveNewLaunch(){
+  const nome = document.getElementById('launchNome').value.trim();
+  const linhaId = document.getElementById('launchLinha').value;
+  const mesInicio = document.getElementById('launchMesInicio').value.trim();
+  const duracao = Math.min(Math.max(parseInt(document.getElementById('launchDuracao').value) || 4, 1), 8);
+  const angulos = document.getElementById('launchAngulos').value.trim();
+  const canais = {};
+  document.querySelectorAll('.launch-channel-check').forEach(cb=> canais[cb.dataset.c]=cb.checked);
+  if(!nome){ showToast('Dê um nome ao lançamento.'); return; }
+  const launch = {id:'lz'+uid(), nome, linhaId, mesInicio, duracaoMeses: duracao, angulos, canais, resultados:{}};
+  state.launches.unshift(launch);
+  state.activeLaunchId = launch.id;
+  state.pendingLaunchLinha = null;
+  document.getElementById('launchNome').value='';
+  document.getElementById('launchMesInicio').value='';
+  document.getElementById('launchDuracao').value='';
+  document.getElementById('launchAngulos').value='';
+  document.getElementById('launchFormWrap').style.display='none';
+  saveLaunches(); renderLaunchesList(); renderLaunchMain();
+}
+
+/* =========================================================
+   API CALL
+========================================================= */
+function buildUserMessage(textPrompt){
+  let fullText = textPrompt;
+  if(state.referencias.textos){
+    fullText += `\n\nReferências de tom/estilo (exemplos de conteúdo completo já validados pela marca): ${state.referencias.textos}`;
+  }
+  const imgs = (state.referencias.imagens||[]).slice(0,3);
+  if(imgs.length){
+    fullText += `\n\nHá imagens de referência anexadas (texturas/mockups/prints do estilo da marca) — use-as apenas para calibrar o tom visual e o tipo de formato sugerido, não as descreva no retorno.`;
+    const content = imgs.map(img=>({type:"image", source:{type:"base64", media_type: img.mediaType, data: img.data}}));
+    content.push({type:"text", text: fullText});
+    return content;
+  }
+  return fullText;
+}
+async function callClaude({system, user, useWebSearch}){
+  const body = { model: "claude-sonnet-4-6", max_tokens: 1000, system: system, messages: [{role:"user", content: user}] };
+  if(useWebSearch) body.tools = [{type:"web_search_20250305", name:"web_search"}];
+  const headers = {"Content-Type":"application/json"};
+  if(apiKeyOverride){
+    headers["x-api-key"] = apiKeyOverride;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers, body: JSON.stringify(body) });
+  if(!res.ok){
+    if((res.status===401 || res.status===403) && !apiKeyOverride) throw new Error('AUTH_NEEDED');
+    throw new Error('API_ERROR_'+res.status);
+  }
+  const data = await res.json();
+  return (data.content||[]).filter(b=>b.type==="text").map(b=>b.text||"").join("\n");
+}
+function extractJson(text){
+  try{ return JSON.parse(text); }catch(e){}
+  const match = text.match(/\{[\s\S]*\}/);
+  if(match){ try{ return JSON.parse(match[0]); }catch(e){} }
+  return null;
+}
+function buildSystemPrompt(canal, extra){
+  return `${BRAND_CONTEXT}
+
+${canal.systemRule}
+
+Você está montando o briefing de conteúdo para a equipe de mídias sociais da EasyChef. Pesquise na web, quando útil, o que marcas concorrentes ou de comunicação parecida estão fazendo, para embasar o benchmarking das ideias.${extra ? ('\n\n'+extra) : ''}
+Responda APENAS com um JSON válido, sem nenhum texto antes ou depois, no formato exato:
+{"ideias":[{"titulo":"","tipo":"Estático ou Vídeo","subtipo":"","publico":"","descricao":"","cta":"","racional":"","benchmark_marca":"","benchmark_insight":""}]}
+O array "ideias" deve ter exatamente 5 itens: exatamente 2 itens com "tipo":"Estático" (subtipo ex: Carrossel, Post estático, Infográfico) e exatamente 3 itens com "tipo":"Vídeo" (subtipo ex: Reels/vídeo curto, Motion de produto, Receita em vídeo). Use "" quando o benchmark não se aplicar a uma ideia específica. Seja conciso: no máximo 22 palavras em descricao, racional e benchmark_insight.`;
+}
+function handleGenError(e){
+  if(e && e.message === 'AUTH_NEEDED'){
+    showToast('Erro de autenticação. Se esta é a versão publicada fora do Claude.ai, adicione sua chave em Configurações (ícone de engrenagem).');
+  }
+}
+
+/* =========================================================
+   ANALYZE HISTORY
+========================================================= */
+async function analyzeHistorico(){
+  const historico = document.getElementById('historicoInput').value.trim();
+  state.historico = historico;
+  if(!historico){ showToast('Cole um resumo do histórico de posts antes de analisar.'); return; }
+  const area = document.getElementById('analysisArea');
+  area.innerHTML = `<div class="analysis-card"><h3>${ICONS.chart} Leitura do mês</h3><p style="font-size:13px;color:var(--ink-soft);">Analisando histórico...</p></div>`;
+
+  const system = `${BRAND_CONTEXT}\n\nVocê é um analista de redes sociais da EasyChef. Leia o histórico de performance de posts que o usuário vai colar e devolva uma leitura curta e prática, em português, com no máximo 5 bullets, cobrindo: o que funcionou, o que evitar repetir, e um padrão por canal se for possível identificar. Responda em texto simples com bullets começando por "•", sem introdução nem conclusão, direto aos pontos.`;
+  const user = `Histórico de posts e performance recente:\n${historico}`;
+
+  try{
+    const text = await callClaude({system, user: buildUserMessage(user), useWebSearch:false});
+    const bullets = text.split('\n').filter(l=>l.trim()).map(l=>l.replace(/^[•\-\*]\s*/,''));
+    area.innerHTML = `<div class="analysis-card"><h3>${ICONS.chart} Leitura do mês</h3><ul class="analysis-list">${bullets.map(b=>`<li>${escapeHtml(b)}</li>`).join('')}</ul></div>`;
+  }catch(e){
+    handleGenError(e);
+    area.innerHTML = `<div class="analysis-card"><h3>${ICONS.chart} Leitura do mês</h3><p style="font-size:13px;color:var(--error);">Não foi possível analisar agora. Tente novamente.</p></div>`;
+  }
+}
+
+/* =========================================================
+   GENERATE — BRIEFING MENSAL
+========================================================= */
+async function generateOneIdea(linha, canalKey){
+  const canal = CHANNELS[canalKey];
+  const system = buildSystemPrompt(canal);
+  const user = `Linha de produto: ${linhaContext(linha)}\nÂngulos/informações a explorar neste conteúdo: ${linha.angulos || "Sem ângulo específico — use seu critério com base no posicionamento da marca e no momento do produto."}\nMarcas de referência para benchmarking: ${state.marcas.join(", ") || "nenhuma informada"}\nHistórico/performance recente da EasyChef (considere o que funcionou): ${state.historico || "não informado"}\n\nGere as 5 ideias de conteúdo para esta linha, neste canal, seguindo à risca a lógica do canal e a proporção de formatos pedida.`;
+  const text = await callClaude({system, user: buildUserMessage(user), useWebSearch:true});
+  const parsed = extractJson(text);
+  return (parsed && Array.isArray(parsed.ideias)) ? parsed.ideias : null;
+}
+async function generateBriefing(){
+  const linhasAtivas = state.linhas.filter(l=>l.ativa);
+  const canaisAtivos = Object.keys(state.canais).filter(k=>state.canais[k]);
+  state.periodo = document.getElementById('periodoInput').value.trim() || "Sem título";
+  if(!linhasAtivas.length){ showToast('Marque ao menos uma linha de produto ativa.'); return; }
+  if(!canaisAtivos.length){ showToast('Marque ao menos um canal.'); return; }
+
+  const combos = [];
+  canaisAtivos.forEach(c=> linhasAtivas.forEach(l=> combos.push({canal:c, linha:l}) ));
+
+  const genBtn = document.getElementById('generateBtn');
+  genBtn.disabled = true; genBtn.textContent = "Gerando...";
+
+  document.getElementById('progressArea').innerHTML = `<div class="progress-bar-wrap"><div class="progress-bar" id="progBar"></div></div><div class="progress-label" id="progLabel">Preparando...</div>`;
+
+  state.resultados = {};
+  canaisAtivos.forEach(c=> state.resultados[c] = {});
+  state.activeTab = canaisAtivos[0];
+  renderLensTabs(); renderLensPane();
+
+  let done = 0, hadAuthError = false;
+  for(const combo of combos){
+    document.getElementById('progLabel').textContent = `Gerando ${done+1} de ${combos.length}: ${combo.linha.nome} · ${CHANNELS[combo.canal].nome}`;
+    try{
+      const ideias = await generateOneIdea(combo.linha, combo.canal);
+      state.resultados[combo.canal][combo.linha.id] = ideias || {error:true};
+    }catch(e){
+      state.resultados[combo.canal][combo.linha.id] = {error:true};
+      if(e && e.message==='AUTH_NEEDED' && !hadAuthError){ handleGenError(e); hadAuthError = true; }
+    }
+    done++;
+    document.getElementById('progBar').style.width = Math.round(done/combos.length*100)+'%';
+    renderLensPane();
+  }
+  document.getElementById('progLabel').textContent = `Pronto — ${combos.length} combinações geradas.`;
+  genBtn.disabled = false; genBtn.textContent = "Gerar briefing do período";
+  await savePeriodResult();
+  if(!hadAuthError) showToast('Briefing do período gerado e salvo.');
+}
+async function retryOne(canalKey, linhaId){
+  const linha = state.linhas.find(l=>l.id===linhaId);
+  if(!linha) return;
+  state.resultados[canalKey][linhaId] = "loading";
+  renderLensPane();
+  try{
+    const ideias = await generateOneIdea(linha, canalKey);
+    state.resultados[canalKey][linhaId] = ideias || {error:true};
+  }catch(e){ state.resultados[canalKey][linhaId] = {error:true}; handleGenError(e); }
+  renderLensPane();
+  await savePeriodResult();
+}
+
+/* =========================================================
+   GENERATE — LANÇAMENTOS
+========================================================= */
+async function generateLaunchIdeas(launch, monthIndex, canalKey){
+  const canal = CHANNELS[canalKey];
+  const linha = state.linhas.find(l=>l.id===launch.linhaId);
+  const fase = phaseForMonth(monthIndex);
+  const extra = `Este conteúdo faz parte de um LANÇAMENTO em andamento: "${launch.nome}", com duração total de ${launch.duracaoMeses} meses. Mês atual: ${monthIndex+1} de ${launch.duracaoMeses} — fase "${fase}". Mensagem central do lançamento: ${launch.angulos || 'não informada'}. Adeque as 5 ideias ao momento da fase (ex: teaser gera curiosidade sem entregar tudo; reforço já pode usar prova social e receitas).`;
+  const system = buildSystemPrompt(canal, extra);
+  const user = `Linha de produto do lançamento: ${linha ? linhaContext(linha) : launch.nome}\nMarcas de referência para benchmarking: ${state.marcas.join(", ") || "nenhuma informada"}\nHistórico/performance recente da EasyChef: ${state.historico || "não informado"}\n\nGere as 5 ideias de conteúdo para o mês ${monthIndex+1} (fase "${fase}") deste lançamento, neste canal, seguindo à risca a lógica do canal e a proporção de formatos pedida.`;
+  const text = await callClaude({system, user: buildUserMessage(user), useWebSearch:true});
+  const parsed = extractJson(text);
+  return (parsed && Array.isArray(parsed.ideias)) ? parsed.ideias : null;
+}
+async function generateLaunchPlan(launchId){
+  const launch = state.launches.find(l=>l.id===launchId);
+  if(!launch) return;
+  const canaisAtivos = Object.keys(launch.canais).filter(k=>launch.canais[k]);
+  if(!canaisAtivos.length){ showToast('Marque ao menos um canal para este lançamento.'); return; }
+
+  const genBtn = document.getElementById('genLaunchBtn');
+  if(genBtn){ genBtn.disabled = true; genBtn.textContent = 'Gerando...'; }
+
+  launch.resultados = {};
+  for(let m=0;m<launch.duracaoMeses;m++) launch.resultados[m] = {};
+  renderLaunchTimeline(launch);
+
+  const combos = [];
+  for(let m=0;m<launch.duracaoMeses;m++) canaisAtivos.forEach(c=> combos.push({m,c}));
+  let done=0, hadAuthError=false;
+  for(const combo of combos){
+    const progEl = document.getElementById('launchProgress');
+    if(progEl) progEl.innerHTML = `<div class="progress-bar-wrap"><div class="progress-bar" style="width:${Math.round(done/combos.length*100)}%"></div></div><div class="progress-label">Gerando ${done+1} de ${combos.length}: mês ${combo.m+1} · ${CHANNELS[combo.c].nome}</div>`;
+    try{
+      const ideias = await generateLaunchIdeas(launch, combo.m, combo.c);
+      launch.resultados[combo.m][combo.c] = ideias || {error:true};
+    }catch(e){
+      launch.resultados[combo.m][combo.c] = {error:true};
+      if(e && e.message==='AUTH_NEEDED' && !hadAuthError){ handleGenError(e); hadAuthError = true; }
+    }
+    done++;
+    renderLaunchTimeline(launch);
+  }
+  const progEl2 = document.getElementById('launchProgress');
+  if(progEl2) progEl2.innerHTML = `<p style="font-size:12px;color:var(--ink-soft);">Plano gerado — ${combos.length} combinações.</p>`;
+  const genBtn2 = document.getElementById('genLaunchBtn');
+  if(genBtn2){ genBtn2.disabled=false; genBtn2.textContent='Gerar plano do lançamento'; }
+  await saveLaunches();
+  if(!hadAuthError) showToast('Plano do lançamento gerado e salvo.');
+}
+async function retryLaunchMonth(launchId, m, c){
+  const launch = state.launches.find(l=>l.id===launchId);
+  if(!launch) return;
+  launch.resultados[m][c] = 'loading';
+  renderLaunchTimeline(launch);
+  try{
+    const ideias = await generateLaunchIdeas(launch, m, c);
+    launch.resultados[m][c] = ideias || {error:true};
+  }catch(e){ launch.resultados[m][c] = {error:true}; handleGenError(e); }
+  renderLaunchTimeline(launch);
+  await saveLaunches();
+}
+
+/* =========================================================
+   SHARED — IDEA CARD RENDERING
+========================================================= */
+function ideaCardHtml(canalKey, groupId, idea, idx){
+  const cardId = `idea-${canalKey}-${groupId}-${idx}`;
+  const hasBmk = idea.benchmark_marca && idea.benchmark_marca.trim();
+  const tipoStr = (idea.tipo||'').toLowerCase();
+  const isVideo = tipoStr.indexOf('víd')===0 || tipoStr.indexOf('vid')===0;
+  const tipoIcon = isVideo ? ICONS.video : ICONS.image;
+  return `
+    <div class="idea-card">
+      <div class="idea-top">
+        <div class="idea-title">${escapeHtml(idea.titulo||'Sem título')}</div>
+        <div class="idea-format">${tipoIcon}${escapeHtml(idea.subtipo || idea.tipo || '')}</div>
+      </div>
+      ${idea.publico?`<div class="idea-audience">${escapeHtml(idea.publico)}</div>`:''}
+      <div class="idea-desc">${escapeHtml(idea.descricao||'')}</div>
+      ${idea.cta?`<div class="idea-cta">CTA: ${escapeHtml(idea.cta)}</div>`:''}
+      <button class="idea-toggle" data-target="${cardId}">ver racional e benchmarking ▾</button>
+      <div class="idea-detail" id="${cardId}">
+        ${idea.racional?`<div class="idea-why"><b>Por quê:</b> ${escapeHtml(idea.racional)}</div>`:''}
+        ${hasBmk?`<div class="benchmark-tag">${ICONS.search}<div><span class="bmk-brand">${escapeHtml(idea.benchmark_marca)}</span> — ${escapeHtml(idea.benchmark_insight||'')}</div></div>`:''}
+        <div class="idea-note-row">
+          <select class="idea-status">
+            <option>Revisar</option><option>Aprovado</option><option>Ajustar</option><option>Descartado</option>
+          </select>
+        </div>
+        <textarea class="idea-note" placeholder="Sua nota de refinamento..."></textarea>
+      </div>
+    </div>`;
+}
+function attachIdeaCardHandlers(root){
+  root.querySelectorAll('.idea-toggle').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const det = document.getElementById(b.dataset.target);
+      det.classList.toggle('open');
+      b.textContent = det.classList.contains('open') ? 'ocultar racional ▴' : 'ver racional e benchmarking ▾';
+    });
+  });
+}
+
+/* =========================================================
+   RENDER — BRIEFING MENSAL
+========================================================= */
+function renderLensTabs(){
+  const el = document.getElementById('lensTabs');
+  const canaisAtivos = Object.keys(state.canais).filter(k=>state.canais[k]);
+  const canaisComResultado = Object.keys(state.resultados);
+  const tabs = canaisComResultado.length ? canaisComResultado : canaisAtivos;
+  if(!tabs.length){ el.innerHTML=''; return; }
+  el.innerHTML = tabs.map(k=>{
+    const c = CHANNELS[k];
+    const count = state.resultados[k] ? Object.keys(state.resultados[k]).length : 0;
+    return `<button class="lens-tab ${state.activeTab===k?'active':''}" data-c="${k}" style="border-color:${state.activeTab===k?c.dot:'transparent'}">
+      <span class="lens-dot" style="background:${c.dot}"></span>${c.nome}
+      ${count?`<span class="lens-count">${count}</span>`:''}
+    </button>`;
+  }).join('');
+  el.querySelectorAll('.lens-tab').forEach(b=>{
+    b.addEventListener('click', ()=>{ state.activeTab = b.dataset.c; renderLensTabs(); renderLensPane(); });
+  });
+}
+function renderLensPane(){
+  const pane = document.getElementById('lensPane');
+  const canaisComResultado = Object.keys(state.resultados);
+  if(!canaisComResultado.length){
+    pane.innerHTML = `<div class="empty-state">
+      <div class="big-lens">${ICONS.search}</div>
+      <h3>Nenhum briefing gerado ainda</h3>
+      <p>Preencha as linhas de produto e os ângulos que quer explorar na barra lateral, escolha os canais e clique em "Gerar briefing do período".</p>
+    </div>`;
+    return;
+  }
+  const canalKey = state.activeTab;
+  const canal = CHANNELS[canalKey];
+  const linhasAtivas = state.linhas.filter(l=>l.ativa);
+  const resultadosCanal = state.resultados[canalKey] || {};
+
+  let html = `<div class="lens-rule" style="background:${canal.tint}"><span>${ICONS.search}</span><span><b>${canal.nome}:</b> ${canal.regra}</span></div>`;
+
+  linhasAtivas.forEach(linha=>{
+    const r = resultadosCanal[linha.id];
+    html += `<div class="line-section"><div class="line-section-head"><h4>${escapeHtml(linha.nome)}</h4>`;
+    if(Array.isArray(r)) html += `<span class="count-tag">${r.length} ideias</span><button class="export-btn" data-canal="${canalKey}" data-linha="${linha.id}">copiar texto</button>`;
+    html += `</div>`;
+    if(r === undefined){
+      html += `<div class="idea-grid"><div class="skeleton"></div></div>`;
+    } else if(r === "loading"){
+      html += `<div class="idea-grid"><div class="skeleton"></div><div class="skeleton"></div></div>`;
+    } else if(r && r.error){
+      html += `<p style="font-size:13px;color:var(--error);">Não deu certo gerar esta combinação. <button class="btn-secondary retry-btn" data-canal="${canalKey}" data-linha="${linha.id}" style="padding:4px 10px;display:inline-flex;">tentar de novo</button></p>`;
+    } else if(Array.isArray(r)){
+      const warn = quotaWarning(r);
+      html += `${warn?`<p class="quota-warning">${warn}</p>`:''}<div class="idea-grid">${r.map((idea,i)=>ideaCardHtml(canalKey, linha.id, idea, i)).join('')}</div>`;
+    }
+    html += `</div>`;
+  });
+
+  pane.innerHTML = html;
+  attachIdeaCardHandlers(pane);
+  pane.querySelectorAll('.retry-btn').forEach(b=> b.addEventListener('click', ()=> retryOne(b.dataset.canal, b.dataset.linha)));
+  pane.querySelectorAll('.export-btn').forEach(b=> b.addEventListener('click', ()=> exportLine(b.dataset.canal, b.dataset.linha)));
+}
+function exportLine(canalKey, linhaId){
+  const linha = state.linhas.find(l=>l.id===linhaId);
+  const ideias = state.resultados[canalKey][linhaId];
+  if(!Array.isArray(ideias)) return;
+  const canal = CHANNELS[canalKey];
+  let text = `${canal.nome} — ${linha.nome}\n${'='.repeat(30)}\n\n`;
+  ideias.forEach((idea,i)=>{
+    text += `${i+1}. ${idea.titulo}\n`;
+    text += `Tipo: ${idea.tipo} (${idea.subtipo||''})\n`;
+    if(idea.publico) text += `Público: ${idea.publico}\n`;
+    text += `Descrição: ${idea.descricao}\n`;
+    if(idea.cta) text += `CTA: ${idea.cta}\n`;
+    text += `Por quê: ${idea.racional}\n`;
+    if(idea.benchmark_marca) text += `Benchmark (${idea.benchmark_marca}): ${idea.benchmark_insight}\n`;
+    text += `\n`;
+  });
+  navigator.clipboard.writeText(text).then(()=> showToast('Texto copiado para a área de transferência.'))
+    .catch(()=> showToast('Não foi possível copiar automaticamente.'));
+}
+
+/* =========================================================
+   RENDER — LANÇAMENTOS
+========================================================= */
+function renderLaunchMain(){
+  const panel = document.getElementById('launchMainPanel');
+  const launch = state.launches.find(l=>l.id===state.activeLaunchId);
+  if(!launch){
+    panel.innerHTML = `<div class="empty-state">
+      <div class="big-lens">${ICONS.rocket}</div>
+      <h3>Nenhum lançamento selecionado</h3>
+      <p>Crie um lançamento na barra lateral (ex: MasterChef), defina duração e mensagem central, e o painel monta o plano mês a mês.</p>
+    </div>`;
+    return;
+  }
+  const linha = state.linhas.find(l=>l.id===launch.linhaId);
+  const canaisAtivos = Object.keys(launch.canais).filter(k=>launch.canais[k]);
+  panel.innerHTML = `
+    <div class="analysis-card" style="margin-bottom:18px;">
+      <h3>${ICONS.rocket} ${escapeHtml(launch.nome)}</h3>
+      <p style="font-size:13px;color:var(--ink-soft);margin:4px 0;">Linha: ${escapeHtml(linha?linha.nome:'—')} · Início: ${escapeHtml(launch.mesInicio||'—')} · Duração: ${launch.duracaoMeses} meses · Canais: ${canaisAtivos.map(c=>CHANNELS[c].nome).join(', ')||'—'}</p>
+      ${launch.angulos?`<p style="font-size:13px;">${escapeHtml(launch.angulos)}</p>`:''}
+      <button class="btn-primary" id="genLaunchBtn" style="margin-top:8px;">Gerar plano do lançamento</button>
+      <div id="launchProgress"></div>
+    </div>
+    <div id="launchTimeline"></div>`;
+  document.getElementById('genLaunchBtn').addEventListener('click', ()=> generateLaunchPlan(launch.id));
+  renderLaunchTimeline(launch);
+}
+function renderLaunchTimeline(launch){
+  const el = document.getElementById('launchTimeline');
+  if(!el) return;
+  const canaisAtivos = Object.keys(launch.canais).filter(k=>launch.canais[k]);
+  let html = '';
+  for(let m=0; m<launch.duracaoMeses; m++){
+    const fase = phaseForMonth(m);
+    const res = launch.resultados[m] || {};
+    html += `<div class="line-section"><div class="line-section-head"><h4>Mês ${m+1} <span style="font-weight:500;color:var(--ink-soft);font-size:13px;">— ${fase}</span></h4></div>`;
+    canaisAtivos.forEach(c=>{
+      const canal = CHANNELS[c];
+      const r = res[c];
+      html += `<div style="margin-bottom:14px;"><div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span class="channel-dot" style="background:${canal.dot}"></span>${canal.nome}</div>`;
+      if(r === undefined){
+        html += `<div class="idea-grid"><div class="skeleton"></div></div>`;
+      } else if(r === 'loading'){
+        html += `<div class="idea-grid"><div class="skeleton"></div><div class="skeleton"></div></div>`;
+      } else if(r && r.error){
+        html += `<p style="font-size:12.5px;color:var(--error);">Não gerou. <button class="btn-secondary retry-launch-btn" data-m="${m}" data-c="${c}" style="padding:3px 8px;display:inline-flex;">tentar de novo</button></p>`;
+      } else if(Array.isArray(r)){
+        const warn = quotaWarning(r);
+        html += `${warn?`<p class="quota-warning">${warn}</p>`:''}<div class="idea-grid">${r.map((idea,i)=>ideaCardHtml('launch-'+launch.id+'-'+m, c, idea, i)).join('')}</div>`;
+      }
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+  el.innerHTML = html;
+  attachIdeaCardHandlers(el);
+  el.querySelectorAll('.retry-launch-btn').forEach(b=> b.addEventListener('click', ()=> retryLaunchMonth(launch.id, parseInt(b.dataset.m), b.dataset.c)));
+}
+
+/* =========================================================
+   INIT
+========================================================= */
+async function init(){
+  document.getElementById('settingsBtn').innerHTML = ICONS.gear;
+  document.querySelector('.mode-btn[data-mode="briefing"]').innerHTML = ICONS.calendar+' Briefing Mensal';
+  document.querySelector('.mode-btn[data-mode="launch"]').innerHTML = ICONS.rocket+' Lançamentos';
+
+  await loadConfig();
+  await loadLaunches();
+  await loadReferencias();
+  renderLines();
+  renderChannels();
+  renderBrandChips();
+  renderRefThumbs();
+  document.getElementById('refTextInput').value = state.referencias.textos || '';
+  await loadSavedPeriodsList();
+  populateLaunchLinhaSelect();
+
+  document.getElementById('addLineBtn').addEventListener('click', ()=>{
+    state.linhas.push({id:'l'+uid(), categoria:'Outros', nome:'Nova linha', cortes:'', embalagens:'', angulos:'', ativa:true});
+    renderLines(); saveConfig();
+  });
+  document.getElementById('brandAddBtn').addEventListener('click', ()=>{
+    const inp = document.getElementById('brandInput');
+    const v = inp.value.trim();
+    if(v){ state.marcas.push(v); inp.value=''; renderBrandChips(); saveConfig(); }
+  });
+  document.getElementById('brandInput').addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); document.getElementById('brandAddBtn').click(); }
+  });
+  document.getElementById('refTextInput').addEventListener('input', e=>{ state.referencias.textos = e.target.value; });
+  document.getElementById('refTextInput').addEventListener('blur', saveReferencias);
+  document.getElementById('refImageInput').addEventListener('change', async (e)=>{
+    const remaining = Math.max(0, 6 - state.referencias.imagens.length);
+    const files = Array.from(e.target.files).slice(0, remaining);
+    for(const file of files){
+      if(file.size > 3*1024*1024){ showToast(`${file.name} é muito grande (máx 3MB).`); continue; }
+      try{
+        const dataUrl = await new Promise((res,rej)=>{
+          const r = new FileReader();
+          r.onload = ()=> res(r.result);
+          r.onerror = rej;
+          r.readAsDataURL(file);
+        });
+        const meta = dataUrl.substring(5, dataUrl.indexOf(';'));
+        const base64 = dataUrl.substring(dataUrl.indexOf(',')+1);
+        state.referencias.imagens.push({id:uid(), name:file.name, mediaType:meta, data:base64});
+      }catch(err){ showToast('Não foi possível ler '+file.name+'.'); }
+    }
+    e.target.value = '';
+    renderRefThumbs();
+    await saveReferencias();
+  });
+
+  document.getElementById('analyzeBtn').addEventListener('click', analyzeHistorico);
+  document.getElementById('generateBtn').addEventListener('click', generateBriefing);
+
+  document.querySelectorAll('.mode-btn').forEach(b=> b.addEventListener('click', ()=> switchMode(b.dataset.mode)));
+  document.getElementById('addLaunchBtn').addEventListener('click', ()=>{
+    const wrap = document.getElementById('launchFormWrap');
+    wrap.style.display = wrap.style.display==='flex' ? 'none' : 'flex';
+    populateLaunchLinhaSelect();
+    renderLaunchChannels();
+  });
+  document.getElementById('saveLaunchBtn').addEventListener('click', saveNewLaunch);
+
+  document.getElementById('settingsBtn').addEventListener('click', ()=>{
+    const p = document.getElementById('settingsPanel');
+    p.style.display = p.style.display==='flex' ? 'none' : 'flex';
+    document.getElementById('apiKeyInput').value = apiKeyOverride;
+  });
+  document.getElementById('saveApiKeyBtn').addEventListener('click', ()=>{
+    apiKeyOverride = document.getElementById('apiKeyInput').value.trim();
+    try{ localStorage.setItem('briefing:apikey', apiKeyOverride); }catch(e){}
+    showToast(apiKeyOverride ? 'Chave salva neste navegador.' : 'Chave removida.');
+    document.getElementById('settingsPanel').style.display='none';
+  });
+
+  renderLensTabs();
+  renderLensPane();
+  renderLaunchMain();
+}
+init();
+</script>
+</body>
+</html>
